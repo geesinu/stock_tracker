@@ -1,0 +1,230 @@
+<head>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+{% extends 'base.html' %}
+
+{% block title %}{{ stock.name }} ({{ stock.symbol }}){% endblock %}
+
+{% block content %}
+<h1>{{ stock.name }} ({{ stock.symbol }})</h1>
+
+<p><a href="{% url 'profile' %}">Return to Profile</a>
+</p>
+{% if user.is_authenticated %}
+{% if stock in user.watchlist_set.all %}
+<a href="{% url 'remove_from_watchlist' stock.symbol %}">Remove from Watchlist</a>
+{% else %}
+<a href="{% url 'add_to_watchlist' stock.symbol %}">Add to Watchlist</a>
+{% endif %}
+{% else %}
+<p><a href="{% url 'login' %}">Log in</a> to add this stock to your watchlist.</p>
+{% endif %}
+  <p>Sector: {{ stock.sector }}</p>
+
+  <!-- Canvas for the chart -->
+  <h2>Price Trend</h2>
+  <div>
+    <label><input type="checkbox" id="show5MA" checked> Show 5-Day Moving Average</label>
+    <label><input type="checkbox" id="show20MA" checked> Show 20-Day Moving Average</label>
+  </div>
+  <canvas id="priceChart" width="400" height="200"></canvas>
+
+
+  <!-- Volume Chart -->
+  <canvas id="volumeChart" width="400" height="100"></canvas>
+
+  <!-- RSI Chart -->
+  <canvas id="rsiChart" width="400" height="100"></canvas>
+
+  <h2>Performance Over Time</h2>
+  <ul>
+    <li><strong>Daily Change:</strong> {{ daily_change|default:"N/A" }}%</li>
+    <li><strong>Weekly Change:</strong> {{ weekly_change|default:"N/A" }}%</li>
+    <li><strong>Monthly Change:</strong> {{ monthly_change|default:"N/A" }}%</li>
+  </ul>
+
+  <h2>Moving Averages</h2>
+  <ul>
+    <li><strong>5-Day Moving Average:</strong> {{ ma_5|default:"N/A" }}</li>
+    <li><strong>20-Day Moving Average:</strong> {{ ma_20|default:"N/A" }}</li>
+  </ul>
+
+  <!-- <div>
+    <h4>Debugging Output:</h4>
+    <p>Dates: {{ dates }}</p>
+    <p>Prices: {{ prices }}</p>
+    <p>5-Day MA: {{ ma_5_series }}</p>
+    <p>20-Day MA: {{ ma_20_series }}</p>
+  </div> -->
+
+  <div class="historical-highs-lows">
+    <h3>Historical Highs and Lows</h3>
+    <ul>
+      <li><strong>All-Time High:</strong> {{ all_time_high.close_price }} on {{ all_time_high.date }}</li>
+      <li><strong>All-Time Low:</strong> {{ all_time_low.close_price }} on {{ all_time_low.date }}</li>
+      <li><strong>52-Week High:</strong> {{ year_high.close_price }} on {{ year_high.date }}</li>
+      <li><strong>52-Week Low:</strong> {{ year_low.close_price }} on {{ year_low.date }}</li>
+    </ul>
+  </div>
+
+  <div class="news-section">
+    <h3>Recent News for {{ stock.symbol }}</h3>
+    {% if news_articles %}
+    <ul>
+      {% for article in news_articles %}
+      <li>
+        <a href="{{ article.url }}" target="_blank">{{ article.title }}</a><br>
+        <small>{{ article.source.name }} - {{ article.publishedAt|date:"Y-m-d H:i" }}</small>
+        <p>{{ article.description }}</p>
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p>No recent news available.</p>
+    {% endif %}
+  </div>
+  
+  <h2>Historical Prices</h2>
+  <table border="1">
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Open Price</th>
+        <th>Close Price</th>
+        <th>Volume</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for record in history %}
+      <tr>
+        <td>{{ record.date }}</td>
+        <td>{{ record.open_price }}</td>
+        <td>{{ record.close_price }}</td>
+        <td>{{ record.volume }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <!-- JavaScript for rendering the chart -->
+  <script>
+    const ctx = document.getElementById('priceChart').getContext('2d');
+    const priceChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: [{% for date in dates %}"{{ date }}"{% if not forloop.last %}, {% endif %}{% endfor %}],
+            datasets: [
+                {
+                    label: 'Close Price',
+                    data: [{% for price in prices %}{{ price }}{% if not forloop.last %}, {% endif %}{% endfor %}],
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    fill: true,
+                },
+                {
+                    label: '5-Day Moving Average',
+                    data: [{% for ma in ma_5_series %}{{ ma|default:"null" }}{% if not forloop.last %}, {% endif %}{% endfor %}],
+                    borderColor: 'green',
+                    fill: false,
+                    hidden: false  // Initially visible
+                },
+                {
+                    label: '20-Day Moving Average',
+                    data: [{% for ma in ma_20_series %}{{ ma|default:"null" }}{% if not forloop.last %}, {% endif %}{% endfor %}],
+                    borderColor: 'red',
+                    fill: false,
+                    hidden: false  // Initially visible
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                x: {
+                    title: { display: true, text: 'Date' }
+                },
+                y: {
+                    title: { display: true, text: 'Close Price' },
+                    beginAtZero: false
+                }
+            }
+        }
+    });
+
+    // Toggle visibility of 5-day moving average
+    document.getElementById('show5MA').addEventListener('change', function() {
+        priceChart.data.datasets[1].hidden = !this.checked;
+        priceChart.update();
+    });
+
+    // Toggle visibility of 20-day moving average
+    document.getElementById('show20MA').addEventListener('change', function() {
+        priceChart.data.datasets[2].hidden = !this.checked;
+        priceChart.update();
+    });
+
+    // Volume Chart
+      const ctxVolume = document.getElementById('volumeChart').getContext('2d');
+      const volumeChart = new Chart(ctxVolume, {
+        type: 'bar',
+        data: {
+          labels: [{% for date in dates %}"{{ date }}"{% if not forloop.last %}, {% endif %}{% endfor %}],
+      datasets: [{
+        label: 'Volume',
+        data: [{% for volume in volumes %}{{ volume }}{% if not forloop.last %}, {% endif %} {% endfor %}],
+      backgroundColor: 'rgba(153, 102, 255, 0.6)',
+            }]
+        },
+      options: {
+        responsive: true,
+          scales: {
+          x: {
+            title: { display: true, text: 'Date' }
+          },
+          y: {
+            title: { display: true, text: 'Volume' },
+            beginAtZero: true
+          }
+        }
+      }
+    });
+
+
+  // console.log("RSI Data:", [{% for rsi in rsi_series %}{ { rsi } } {% if not forloop.last %}, {% endif %} {% endfor %}]);
+
+  const rsiData = {{ rsi_series_json| safe }};
+    const ctxRSI = document.getElementById('rsiChart').getContext('2d');
+    const rsiChart = new Chart(ctxRSI, {
+      type: 'line',
+      data: {
+        labels: [{% for date in dates %}"{{ date }}"{% if not forloop.last %}, {% endif %}{% endfor %}],
+    datasets: [{
+      label: 'RSI (14)',
+      data: rsiData,
+      borderColor: 'rgba(255, 159, 64, 1)',
+      fill: false,
+    }]
+        },
+    options: {
+      responsive: true,
+        scales: {
+        x: {
+          title: { display: true, text: 'Date' }
+        },
+        y: {
+          title: { display: true, text: 'RSI' },
+          min: 0,
+            max: 100,
+              beginAtZero: true
+        }
+      }
+    }
+    });
+
+</script>
+
+
+
+
+{% endblock %}

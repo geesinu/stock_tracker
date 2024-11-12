@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+
+{% block title %}Add Stock{% endblock %}
+
+{% block content %}
+<div class="container">
+  <h2>Add New Stock</h2>
+  <form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit" class="btn btn-primary">Save</button>
+    <a href="{% url 'profile' %}" class="btn btn-secondary">Cancel</a>
+  </form>
+</div>
+{% endblock %}

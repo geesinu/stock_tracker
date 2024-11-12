@@ -1,0 +1,38 @@
+<!-- tracker/templates/base.html -->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Stock Tracker{% endblock %}</title>
+</head>
+
+<body>
+  <!-- Navigation Bar -->
+  <header>
+    <nav>
+      {% if user.is_authenticated %}
+      <p>Logged in as: {{ user.username }}</p>
+      <form action="{% url 'logout' %}" method="post" style="display: inline;">
+        {% csrf_token %}
+        <button type="submit">Logout</button>
+      </form>
+      {% else %}
+      <a href="{% url 'login' %}">Login</a>
+      {% endif %}
+
+      <form action="{% url 'search_stock' %}" method="get">
+        <input type="text" name="q" placeholder="Search stocks...">
+        <button type="submit">Search</button>
+      </form>
+    </nav>
+  </header>
+
+  <!-- Page Content -->
+  <div>
+    {% block content %}{% endblock %}
+  </div>
+</body>
+
+</html>

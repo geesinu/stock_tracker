@@ -1,0 +1,54 @@
+<!-- tracker/templates/tracker/profile.html -->
+{% extends 'base.html' %}
+
+{% block content %}
+<h1>Welcome, {{ user.username }}!</h1>
+
+<h2>Your Watchlist</h2>
+{% if watchlist_items %}
+<ul>
+  {% for item in watchlist_items %}
+  <li>
+    <a href="{% url 'stock_detail' item.stock.symbol %}">{{ item.stock.name }} ({{ item.stock.symbol }})</a>
+    - <a href="{% url 'remove_from_watchlist' item.stock.symbol %}">Remove</a>
+  </li>
+  {% endfor %}
+</ul>
+{% else %}
+<p>Your watchlist is empty.</p>
+{% endif %}
+
+
+<h2>Add, Edit, Update stock</h2>
+<ul>
+  <!-- Add New Stock Button -->
+  <form action="{% url 'add_stock' %}" method="get">
+    <button type="submit">Add New Stock</button>
+  </form>
+  <!-- Line Separator -->
+  <p>
+  <!-- Refresh Stock Data Button -->
+  <form action="{% url 'refresh_stock_data' %}" method="post">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-primary">Refresh Stock Data</button>
+  </form>
+  <!-- Edit Existing Stock Form -->
+  <h3>Edit Existing Stock</h3>
+  <form method="post" action=".">
+    {% csrf_token %}
+    {{ stock_selection_form.as_p }}
+    <button type="submit" name="edit_stock" class="btn btn-primary">Edit Selected Stock</button>
+  </form>
+</ul>
+
+<h2>Popular Stocks</h2>
+{% if popular_stocks %}
+<ul>
+	{% for stock in popular_stocks %}
+	<li><a href="{% url 'stock_detail' stock.symbol %}">{{ stock.name }} ({{ stock.symbol }})</a></li>
+	{% endfor %}
+</ul>
+{% else %}
+<p>No popular stocks available.</p>
+{% endif %}
+{% endblock %}
