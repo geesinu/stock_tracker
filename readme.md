@@ -28,7 +28,7 @@ This project showcases advanced Django functionality, API integration, and dynam
 1. **Clone the Repository**:
 
    ```bash
-   git clone https://github.com/yourusername/stock-market-tracker.git
+   git clone https://github.com/geesinu/stock_tracker.git
    cd stock-market-tracker
    ```
 
