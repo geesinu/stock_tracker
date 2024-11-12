@@ -70,9 +70,43 @@ This project showcases advanced Django functionality, API integration, and dynam
 
 - Go to http://127.0.0.1:8000 in your browser.
 
-**Usage**
+## Usage
 
-- Home Page: Displays stock information, popular stocks, and quick links to add/remove stocks from the watchlist.
-- Stock Details: View detailed information, including historical prices, moving averages, RSI, news, and highs and lows.
-- Profile Page: View and manage your watchlist.
-- Admin Panel: Admin users can access the admin panel at /admin to manage stocks, news, and other app data.
+- **Home Page**: Displays stock information, popular stocks, and quick links to add/remove stocks from the watchlist.
+- **Stock Details**: Displays detailed information for a selected stock, including:
+   - Price Trend with 5-Day and 20-Day Moving Averages (toggleable).
+   - Volume and RSI (14) charts.
+   - Daily, Weekly, and Monthly Price Changes.
+   - All-Time High/Low and 52-Week High/Low.
+   - Recent news articles related to the stock.
+- **Watchlist**: Users can add/remove stocks to/from their watchlist from the stock detail view.
+- **Stock Management Features**: All authenticated users have access to add, edit, and refresh stock data.
+
+## API & URL Endpoints
+### Main URLs
+ 1. **Home Redirect** (`/`, name='home')
+      - Redirects authenticated users to the profile page, displaying their watchlist and popular stocks.
+ 2. **Stock Detail**  (`/stocks/<symbol>/`, name='stock_detail')
+      - Redirects authenticated users to the profile page, displaying their watchlist and popular stocks.
+ 3. **Add to Watchlist**  (`/add_to_watchlist/<symbol>/`, name='add_to_watchlist')
+      - Adds a specified stock to the user’s watchlist.
+ 4. **Remove from Watchlist**  (`/remove_from_watchlist/<symbol>/`, name='remove_from_watchlist')
+      - Removes a specified stock from the user’s watchlist.
+ 5. **Profile**  (`/accounts/profile/`, name='profile')
+      - Profile page that displays the user’s watchlist and stock management options.
+ 6. **Search Stock**  (`/search/`, name='search_stock')
+      - Search functionality to find stocks by symbol or name.
+### Stock Management URLs
+ 7. **Add Stock**  (`/add_stock/`, name='add_stock')
+      - Allows users to add new stocks to the database. Displays a form with fields for stock symbol, name, and sector.
+ 8. **Edit Stock**  (`/edit_stock/<symbol>/`, name='edit_stock')
+      - Allows users to edit details of an existing stock. Users select the stock to edit from a dropdown on the profile page.
+ 9. **Refresh Stock Data**  (`/refresh_stock_data/`, name='refresh_stock_data')
+      - Triggers the `fetch_price_history` management command to update stock price data.
+
+## Future Improvements
+- **Financial Ratios**: Calculation and display of P/E, P/B, and Dividend Yield ratios.
+- **User Sentiment Analysis**: Allow users to submit sentiment (bullish or bearish) on each stock, with an overall sentiment summary displayed.
+
+## License
+This project is licensed under the MIT License - see the LICENSE file for details.
